@@ -39,7 +39,7 @@ abstract class ReadBitsRequest(start: UInt16, count: UInt16, code: FunctionCode)
     extends StartCountReadRequest(start, count, code) with Logging {
 
   def handleResponse(array: Array[Byte]): Unit = {
-    assert(array.size >= numResponseBytes)
+    if (array.size < numResponseBytes) throw new IllegalStateException("Response array too small for response count")
     val numBytes = array(0) //read one byte out of the buffer
     val expected = numResponseBytes - 1
     if (numBytes != expected) logger.error("Expected " + expected + " bytes, but packet specifies " + numBytes)
@@ -60,7 +60,7 @@ abstract class ReadUInt16Request(start: UInt16, count: UInt16, code: FunctionCod
     extends StartCountReadRequest(start, count, code) with Logging {
 
   def handleResponse(array: Array[Byte]): Unit = {
-    assert(array.size >= numResponseBytes)
+    if (array.size < numResponseBytes) throw new IllegalStateException("Response array too small for response count")
     val numBytes = array(0) //read one byte out of the buffer
     val expected = numResponseBytes - 1
     if (numBytes != expected) logger.error("Expected " + expected + " bytes, but packet specifies " + numBytes)

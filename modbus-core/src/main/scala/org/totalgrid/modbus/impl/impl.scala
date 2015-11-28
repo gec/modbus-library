@@ -56,7 +56,7 @@ package object impl {
 
   def fromHex(hex: String): Array[Byte] = {
     val cleanInput = hex.replaceAll("\\s|\\n", "")
-    assert((cleanInput.length % 2) == 0)
+    if ((cleanInput.length % 2) != 0) throw new IllegalArgumentException("Hex strings must have even number of characters")
     cleanInput.sliding(2, 2).map(s => java.lang.Integer.parseInt(s, 16).toByte).toArray
   }
 

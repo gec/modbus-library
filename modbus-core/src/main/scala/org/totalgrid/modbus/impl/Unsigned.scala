@@ -19,8 +19,9 @@ package org.totalgrid.modbus.impl
  * the License.
  */
 case class UInt16(value: Int) extends ByteSerializable {
-  assert(value >= 0)
-  assert(value < 65536)
+  if (value < 0 || value > 65535) {
+    throw new IllegalArgumentException(s"Value $value out of bounds for a 16-bit unsigned integer")
+  }
 
   def toBytes: Array[Byte] = convertShortToBytes(value.toShort)
 }

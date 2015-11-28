@@ -35,7 +35,8 @@ private[modbus] case class RequestRecord(poll: Poll, observer: ModbusDeviceObser
 }
 
 private[modbus] class RequestSet(seq: Seq[RequestRecord]) {
-  assert(!seq.isEmpty)
+  if (seq.isEmpty) throw new IllegalArgumentException("Must have non-empty request set")
+
   private val set = collection.mutable.Set.empty[RequestRecord]
   seq.foreach(set.add)
 

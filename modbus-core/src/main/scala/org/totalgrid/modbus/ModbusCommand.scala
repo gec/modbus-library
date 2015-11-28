@@ -21,13 +21,6 @@ package org.totalgrid.modbus
 import net.agileautomata.executor4s.Future
 import org.totalgrid.modbus.impl.{ PduHandler, RequestResponse }
 
-/*
-sealed trait ModbusCommand
-
-final case class WriteSingleCoil(value: Boolean, address: UInt16) extends ModbusCommand
-final case class WriteSingleRegister(value: UInt16, address: UInt16) extends ModbusCommand
-*/
-
 trait CommandHandler {
   def issue(cmd: PduHandler): Future[RequestResponse]
 }
