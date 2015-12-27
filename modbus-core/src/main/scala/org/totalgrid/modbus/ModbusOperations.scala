@@ -18,6 +18,13 @@
  */
 package org.totalgrid.modbus
 
-trait ModbusMaster extends ModbusOperations {
-  def close(): Unit
+import scala.concurrent.Future
+
+trait ModbusOperations {
+  def writeSingleCoil(index: Int, value: Boolean): Future[Boolean]
+  def writeSingleRegister(index: Int, value: Int): Future[Boolean]
+  def readDiscreteInputs(start: Int, count: Int): Future[Seq[ModbusBit]]
+  def readCoilStatuses(start: Int, count: Int): Future[Seq[ModbusBit]]
+  def readInputRegisters(start: Int, count: Int): Future[Seq[ModbusRegister]]
+  def readHoldingRegisters(start: Int, count: Int): Future[Seq[ModbusRegister]]
 }

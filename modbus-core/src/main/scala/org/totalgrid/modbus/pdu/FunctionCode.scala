@@ -16,8 +16,29 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.totalgrid.modbus
+package org.totalgrid.modbus.pdu
 
-trait ModbusMaster extends ModbusOperations {
-  def close(): Unit
+import java.nio.ByteBuffer
+
+import org.totalgrid.modbus.data.BufferSerializable
+
+case class FunctionCode(code: Byte) extends BufferSerializable {
+  val error = (code | 0x80).toByte
+
+  def size(): Int = 1
+
+  def write(buffer: ByteBuffer): Unit = {
+    buffer.put(code)
+  }
+}
+
+object FunctionCode {
+  val READ_DISCRETE_INPUTS = new FunctionCode(0x02)
+  val READ_COILS = new FunctionCode(0x01)
+  val WRITE_SINGLE_COIL = new FunctionCode(0x05)
+  val WRITE_MULTIPLE_COILS = new FunctionCode(0x0F)
+  val READ_INPUT_REGISTERS = new FunctionCode(0x04)
+  val READ_HOLDING_REGISTERS = new FunctionCode(0x03)
+  val WRITE_SINGLE_REGISTER = new FunctionCode(0x06)
+  val WRITE_MULTIPLE_REGISTERS = new FunctionCode(0x10)
 }

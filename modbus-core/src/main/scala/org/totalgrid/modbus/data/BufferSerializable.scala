@@ -16,8 +16,22 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.totalgrid.modbus
+package org.totalgrid.modbus.data
 
-trait ModbusMaster extends ModbusOperations {
-  def close(): Unit
+import java.nio.ByteBuffer
+
+object BufferSerializable {
+  def wrap(b: Byte): BufferSerializable = {
+    new SerializedByte(b)
+  }
+
+  class SerializedByte(b: Byte) extends BufferSerializable {
+    def size(): Int = 1
+    def write(buffer: ByteBuffer): Unit = buffer.put(b)
+  }
+}
+trait BufferSerializable {
+  def size(): Int
+
+  def write(buffer: ByteBuffer): Unit
 }

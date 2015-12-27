@@ -16,8 +16,24 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.totalgrid.modbus
+package org.totalgrid.modbus.process
 
-trait ModbusMaster extends ModbusOperations {
-  def close(): Unit
+import java.util.concurrent.Executor
+
+object Dispatcher {
+
+  def build(exe: Executor): Dispatcher = new DefaultDispatcher(exe)
+
+  class DefaultDispatcher(exe: Executor) extends Dispatcher {
+    def dispatch[A](f: () => A): Unit = {
+      exe.execute(new Runnable {
+        def run(): Unit = {
+          f()
+        }
+      })
+    }
+  }
+}
+trait Dispatcher {
+  def dispatch[A](f: () => A)
 }

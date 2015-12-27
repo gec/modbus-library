@@ -16,8 +16,30 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.totalgrid.modbus
+package org.totalgrid.modbus.data
 
-trait ModbusMaster extends ModbusOperations {
-  def close(): Unit
+import java.nio.ByteBuffer
+
+object Hex {
+
+  def fromHex(hex: String): Array[Byte] = {
+    val cleanInput = hex.replaceAll("\\s|\\n", "")
+    if ((cleanInput.length % 2) != 0) throw new IllegalArgumentException("Hex strings must have even number of characters")
+    cleanInput.sliding(2, 2).map(s => java.lang.Integer.parseInt(s, 16).toByte).toArray
+  }
+
+  def bufferFromHex(hex: String): ByteBuffer = {
+    ByteBuffer.wrap(fromHex(hex))
+  }
+
+  def toHex(byte: Byte): String = String.format("%02X", java.lang.Byte.valueOf(byte))
+
+  def toHex(bytes: Array[Byte]): String = bytes.map(toHex).mkString(" ")
+
+  def toHex(v: Short): String = {
+    val ar = new Array[Byte](2)
+    val bb = ByteBuffer.wrap(ar)
+    UInt16.writeShort(bb, v)
+    toHex(ar)
+  }
 }

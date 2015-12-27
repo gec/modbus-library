@@ -1,3 +1,5 @@
+package org.totalgrid.modbus.pdu
+
 /**
  * Copyright 2011 Green Energy Corp.
  *
@@ -16,8 +18,26 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.totalgrid.modbus
+import scala.annotation.tailrec
 
-trait ModbusMaster extends ModbusOperations {
-  def close(): Unit
+object BitReader {
+  def apply[A](start: Int, cnt: Int, offset: Int, array: Array[Byte])(convert: (Int, Boolean) => A): Seq[A] = {
+
+    val t = new Traversable[A] {
+      def foreach[U](fun: A => U): Unit = {
+        @tailrec
+        def next(i: Int): Unit = if (i < cnt) {
+          val byte = i / 8
+          val bit = i % 8
+          val bool = ((array(byte + offset) >> bit) & 0x01) != 0
+          fun(convert(start + i, bool))
+          next(i + 1)
+        }
+        next(0)
+      }
+    }
+
+    t.toVector
+  }
 }
+

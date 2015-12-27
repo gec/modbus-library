@@ -19,10 +19,13 @@
 package org.totalgrid.modbus.japi.impl
 
 import org.totalgrid.modbus._
-import org.totalgrid.modbus.impl._
 import org.totalgrid.modbus.japi.ChannelObserver
 import org.totalgrid.modbus.japi._
+import org.totalgrid.modbus.data.UInt16
+import org.totalgrid.modbus.pdu.{ WriteSingleRegisterRequest, WriteSingleCoilRequest }
+import org.totalgrid.modbus.poll._
 import scala.collection.JavaConversions._
+import scala.concurrent.Future
 
 object Conversions {
 
@@ -89,31 +92,21 @@ class ChannelObsShim(j: ChannelObserver) extends org.totalgrid.modbus.ChannelObs
   override def onChannelOffline(): Unit = j.onChannelOffline()
 }
 
-class CommandHandlerShim(s: CommandHandler) extends ModbusCommandHandler {
+object CommandHandlerShim {
+  import scala.concurrent.ExecutionContext.Implicits.global
+  def handleFuture(fut: Future[Boolean], resultHandler: CommandResultHandler): Unit = {
+    fut.onFailure { case ex => resultHandler.completed(false) }
+    fut.onSuccess { case v => resultHandler.completed(true) }
+  }
+}
+class CommandHandlerShim(s: ModbusOperations) extends ModbusCommandHandler {
 
   def writeSingleCoil(index: Int, value: Boolean, resultHandler: CommandResultHandler): Unit = {
-    val req = new WriteSingleCoilRequest(value, UInt16(index))
-    write(req, resultHandler)
+    CommandHandlerShim.handleFuture(s.writeSingleCoil(index, value), resultHandler)
   }
 
   def writeSingleRegister(index: Int, value: Int, resultHandler: CommandResultHandler): Unit = {
-    val v: Int = if (value < 0) {
-      val asShort = value.toShort
-      (asShort & 0xFF) | (asShort & 0xFF00)
-    } else {
-      value
-    }
-
-    val req = new WriteSingleRegisterRequest(UInt16(v), UInt16(index))
-    write(req, resultHandler)
+    CommandHandlerShim.handleFuture(s.writeSingleRegister(index, value), resultHandler)
   }
 
-  private def write(req: PduHandler, resultHandler: CommandResultHandler): Unit = {
-    val fut = s.issue(req)
-    fut.listen {
-      case SuccessResponse => resultHandler.completed(true)
-      case ChannelClosedResponse => resultHandler.completed(false)
-      case ExceptionResponse(ex) => resultHandler.completed(false)
-    }
-  }
 }

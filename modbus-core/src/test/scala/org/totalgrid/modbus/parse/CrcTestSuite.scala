@@ -1,3 +1,5 @@
+package org.totalgrid.modbus.parse
+
 /**
  * Copyright 2011 Green Energy Corp.
  *
@@ -16,8 +18,25 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.totalgrid.modbus
+import org.junit.runner.RunWith
+import org.scalatest.FunSuite
+import org.scalatest.junit.JUnitRunner
+import org.scalatest.matchers.ShouldMatchers
+import org.totalgrid.modbus.data.Hex
 
-trait ModbusMaster extends ModbusOperations {
-  def close(): Unit
+@RunWith(classOf[JUnitRunner])
+class CrcTestSuite extends FunSuite with ShouldMatchers {
+
+  import Hex._
+
+  test("Correctly generates crc from docs") {
+    val crc = Crc.calc(fromHex("02 07"))
+    toHex(crc) should equal("41 12")
+  }
+
+  test("Correctly generates a crc from http://www.lammertbies.nl/comm/info/crc-calculation.html") {
+    val crc = Crc.calc(fromHex("0A 0B 0C 0D 0E"))
+    toHex(crc) should equal("FB 72")
+  }
+
 }

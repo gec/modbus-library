@@ -16,8 +16,14 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.totalgrid.modbus
+package org.totalgrid.modbus.parse
 
-trait ModbusMaster extends ModbusOperations {
-  def close(): Unit
+import java.nio.ByteBuffer
+
+trait PduParser[Result] {
+  val function: Byte
+  val error: Byte
+  def responseSize(): Int
+
+  def handleData(buffer: ByteBuffer): ParseState[Result]
 }

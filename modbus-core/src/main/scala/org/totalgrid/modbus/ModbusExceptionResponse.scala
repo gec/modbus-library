@@ -18,6 +18,8 @@
  */
 package org.totalgrid.modbus
 
-trait ModbusMaster extends ModbusOperations {
-  def close(): Unit
-}
+import org.totalgrid.modbus.data.Hex
+
+class ModbusExceptionResponse(code: Byte) extends Exception("Modbus response exception: " + Hex.toHex(code))
+
+class ModbusProtocolError(message: String) extends Exception(message)

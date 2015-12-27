@@ -16,8 +16,24 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.totalgrid.modbus
+package org.totalgrid.modbus.process
 
-trait ModbusMaster extends ModbusOperations {
-  def close(): Unit
+import java.util.concurrent.{ TimeUnit, ScheduledExecutorService }
+
+object Scheduler {
+
+  def build(exe: ScheduledExecutorService) = new DefaultScheduler(exe)
+
+  class DefaultScheduler(exe: ScheduledExecutorService) extends Scheduler {
+    def scheduleCall[A](f: () => A, delayMs: Long): Unit = {
+      exe.schedule(new Runnable {
+        def run(): Unit = {
+          f()
+        }
+      }, delayMs, TimeUnit.MILLISECONDS)
+    }
+  }
+}
+trait Scheduler {
+  def scheduleCall[A](f: () => A, delayMs: Long)
 }

@@ -16,8 +16,15 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.totalgrid.modbus
+package org.totalgrid.modbus.pdu
 
-trait ModbusMaster extends ModbusOperations {
-  def close(): Unit
+import org.totalgrid.modbus.data.{ UInt16, BufferSerializable, SerializableSequence }
+
+abstract class StartCountReadRequest(start: UInt16, count: UInt16, func: FunctionCode) extends RequestPdu with SerializableSequence {
+
+  val function = func
+
+  protected def objects(): Seq[BufferSerializable] = {
+    Vector(func, start, count)
+  }
 }

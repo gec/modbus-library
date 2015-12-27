@@ -16,8 +16,12 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.totalgrid.modbus
+package org.totalgrid.modbus.pdu
 
-trait ModbusMaster extends ModbusOperations {
-  def close(): Unit
+import org.totalgrid.modbus.data.BufferSerializable
+
+trait RequestPdu extends BufferSerializable {
+
+  val function: FunctionCode
+
 }

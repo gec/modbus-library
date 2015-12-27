@@ -18,13 +18,12 @@
  */
 package org.totalgrid.modbus.japi
 
-import org.totalgrid.modbus.ModbusMaster
-import org.totalgrid.modbus.impl.AduHandlerFactory
 import org.totalgrid.modbus.japi.impl.{ CommandHandlerShim, Conversions, ChannelObsShim, DataObsShim }
+import org.totalgrid.modbus.{ ModbusManager => ScalaModbusManager }
 
 class ModbusManager {
 
-  private val m = new ModbusMaster
+  private val m = ScalaModbusManager.start(8192, 6)
 
   def addTcpMaster(host: String,
     port: Int,
@@ -34,7 +33,17 @@ class ModbusManager {
     channelObserver: ChannelObserver,
     polls: java.util.List[ModbusPoll]): MasterHandle = {
 
-    addMaster(host, port, dataObserver, commsObserver, channelObserver, polls, AduHandlerFactory.tcpip(modbusAddress))
+    val mdo = new DataObsShim(dataObserver, commsObserver)
+    val co = new ChannelObsShim(channelObserver)
+    val spolls = Conversions.convertPollList(polls)
+
+    val master = m.addTcpMaster(host, port, modbusAddress, mdo, co, spolls, 10000, 5000)
+
+    new MasterHandle {
+      def cancel(): Unit = master.close()
+
+      def getCommandHandler: ModbusCommandHandler = new CommandHandlerShim(master)
+    }
   }
 
   def addRtuMaster(host: String,
@@ -44,27 +53,17 @@ class ModbusManager {
     commsObserver: CommsObserver,
     channelObserver: ChannelObserver,
     polls: java.util.List[ModbusPoll]): MasterHandle = {
-    addMaster(host, port, dataObserver, commsObserver, channelObserver, polls, AduHandlerFactory.rtu(modbusAddress))
-  }
-
-  private def addMaster(host: String,
-    port: Int,
-    dataObserver: ModbusDataObserver,
-    commsObserver: CommsObserver,
-    channelObserver: ChannelObserver,
-    polls: java.util.List[ModbusPoll],
-    factory: AduHandlerFactory): MasterHandle = {
 
     val mdo = new DataObsShim(dataObserver, commsObserver)
     val co = new ChannelObsShim(channelObserver)
     val spolls = Conversions.convertPollList(polls)
 
-    val record = m.addTcpClient(host, port, mdo, co, spolls.toList, factory)
+    val master = m.addTcpMaster(host, port, modbusAddress, mdo, co, spolls, 10000, 5000)
 
     new MasterHandle {
-      def cancel(): Unit = record.cancel.cancel()
+      def cancel(): Unit = master.close()
 
-      def getCommandHandler: ModbusCommandHandler = new CommandHandlerShim(record.handler)
+      def getCommandHandler: ModbusCommandHandler = new CommandHandlerShim(master)
     }
   }
 

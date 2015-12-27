@@ -1,7 +1,3 @@
-package org.totalgrid.modbus
-
-import java.nio.ByteBuffer
-
 /**
  * Copyright 2011 Green Energy Corp.
  *
@@ -20,6 +16,11 @@ import java.nio.ByteBuffer
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+package org.totalgrid.modbus
+
+import java.nio.ByteBuffer
+
+import org.totalgrid.modbus.data.Hex
 
 object ModbusData {
   def joinSInt32BE(first: ByteX2, second: ByteX2): Long = first.sInt16.toLong << 16 | second.uInt16
@@ -48,7 +49,7 @@ final case class ModbusBit(i: Int, b: Boolean) extends ModbusData[Boolean] {
 
 object ByteX2 {
   def apply(string: String): ByteX2 = {
-    val bytes = impl.fromHex(string)
+    val bytes = Hex.fromHex(string)
     if (bytes.size != 2) throw new IllegalArgumentException("2 and only 2 bytes allowed")
     else ByteX2(bytes(0), bytes(1))
   }

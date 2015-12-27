@@ -16,8 +16,10 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.totalgrid.modbus
+package org.totalgrid.modbus.parse
 
-trait ModbusMaster extends ModbusOperations {
-  def close(): Unit
-}
+sealed trait ParseState[+Result]
+case object Preserve extends ParseState[Nothing]
+case object Discard extends ParseState[Nothing]
+case class ValidResponse[Result](result: Result) extends ParseState[Result]
+case class ResponseException(ex: Byte) extends ParseState[Nothing]
