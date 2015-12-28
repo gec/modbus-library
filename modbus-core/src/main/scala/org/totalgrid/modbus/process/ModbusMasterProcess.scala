@@ -247,7 +247,7 @@ class ModbusMasterProcess(
       logger.debug(s"$id had error on send: " + ex)
 
       scheduleConnectionRetry()
-      requestSequence += 1
+      requestSequence = (requestSequence + 1) % 65536
 
       state = NotConnected
       notifyChannelOffline()
@@ -273,7 +273,7 @@ class ModbusMasterProcess(
           logger.trace(s"$id on read data: " + buffer.remaining())
           val completed = handler.handleData(buffer)
           if (completed) {
-            requestSequence += 1
+            requestSequence = (requestSequence + 1) % 65536
             logger.trace(s"$id read complete")
             checkOperationsThenTasks(conn) match {
               case None => state = Idle(conn)
