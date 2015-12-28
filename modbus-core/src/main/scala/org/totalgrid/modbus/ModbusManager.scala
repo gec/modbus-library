@@ -51,7 +51,8 @@ class ModbusManager(nio: NioService, nioThread: Thread, scheduledPool: Int) {
     channelObs: ChannelObserver,
     polls: Seq[Poll],
     connectionTimeoutMs: Long,
-    connectionRetryMs: Long): ModbusMaster = {
+    connectionRetryMs: Long,
+    operationTimeoutMs: Long): ModbusMaster = {
 
     val scheduler = Scheduler.build(scheduleService)
     val dispatcher = Dispatcher.build(dispatchService)
@@ -65,6 +66,7 @@ class ModbusManager(nio: NioService, nioThread: Thread, scheduledPool: Int) {
       port,
       connectionTimeoutMs,
       connectionRetryMs,
+      operationTimeoutMs,
       deviceObs,
       channelObs,
       polls,
@@ -81,7 +83,8 @@ class ModbusManager(nio: NioService, nioThread: Thread, scheduledPool: Int) {
     channelObs: ChannelObserver,
     polls: Seq[Poll],
     connectionTimeoutMs: Long,
-    connectionRetryMs: Long): ModbusMaster = {
+    connectionRetryMs: Long,
+    operationTimeoutMs: Long): ModbusMaster = {
 
     val scheduler = Scheduler.build(scheduleService)
     val dispatcher = Dispatcher.build(dispatchService)
@@ -95,6 +98,7 @@ class ModbusManager(nio: NioService, nioThread: Thread, scheduledPool: Int) {
       port,
       connectionTimeoutMs,
       connectionRetryMs,
+      operationTimeoutMs,
       deviceObs,
       channelObs,
       polls,

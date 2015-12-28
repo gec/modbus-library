@@ -37,7 +37,7 @@ class ModbusManager {
     val co = new ChannelObsShim(channelObserver)
     val spolls = Conversions.convertPollList(polls)
 
-    val master = m.addTcpMaster(host, port, modbusAddress, mdo, co, spolls, 10000, 5000)
+    val master = m.addTcpMaster(host, port, modbusAddress, mdo, co, spolls, 10000, 5000, 5000)
 
     new MasterHandle {
       def cancel(): Unit = master.close()
@@ -58,7 +58,7 @@ class ModbusManager {
     val co = new ChannelObsShim(channelObserver)
     val spolls = Conversions.convertPollList(polls)
 
-    val master = m.addTcpMaster(host, port, modbusAddress, mdo, co, spolls, 10000, 5000)
+    val master = m.addTcpMaster(host, port, modbusAddress, mdo, co, spolls, 10000, 5000, 5000)
 
     new MasterHandle {
       def cancel(): Unit = master.close()

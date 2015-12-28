@@ -55,7 +55,7 @@ class IntegrationTest extends FunSuite with ShouldMatchers with BeforeAndAfterEa
     }
 
     def buildMaster(polls: Seq[Poll], port: Int, unitIdentifier: Int, watcher: Watcher) = {
-      val master = mgr.addTcpMaster("127.0.0.1", 34001, 33, watcher, watcher, polls, 500, 100)
+      val master = mgr.addTcpMaster("127.0.0.1", 34001, 33, watcher, watcher, polls, 500, 100, 100)
       masters ++= Vector(master)
       master
     }

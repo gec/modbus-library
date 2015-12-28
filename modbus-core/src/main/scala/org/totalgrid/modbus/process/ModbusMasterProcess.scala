@@ -55,6 +55,7 @@ class ModbusMasterProcess(
     port: Int,
     connectTimeoutMs: Long,
     connectRetryIntervalMs: Long,
+    operationTimeoutMs: Long,
     deviceObs: ModbusDeviceObserver,
     channelObs: ChannelObserver,
     polls: Seq[Poll],
@@ -133,6 +134,7 @@ class ModbusMasterProcess(
   private def doReadRequest[A](conn: ClientConnection, pdu: RequestPdu, parser: PduParser[A], handler: A => Unit, prom: Promise[A]): ResponseHandler = {
     logger.debug(s"$id user-issued read request operation: ${pdu.getClass.getSimpleName}")
     doRequest(conn, pdu)
+    scheduleTimeoutCheck(requestSequence, operationTimeoutMs)
     new ReadResponseHandler(id, localReadBuffer, requestSequence, dispatcher, aduParser, parser, handler, Some(prom))
   }
 
@@ -174,6 +176,7 @@ class ModbusMasterProcess(
   private def doWriteRequest(conn: ClientConnection, request: WriteRequest, prom: Promise[Boolean]): ResponseHandler = {
     logger.debug(s"$id user-issued write request operation: ${request.getClass.getSimpleName}")
     doRequest(conn, request)
+    scheduleTimeoutCheck(requestSequence, operationTimeoutMs)
     new WriteResponseHandler(id, localReadBuffer, requestSequence, aduParser, request.parser(), prom)
   }
 
@@ -222,6 +225,29 @@ class ModbusMasterProcess(
         case st => logger.error(s"$id received connection retry in state $st")
       }
     }
+  }
+
+  private def onTimeoutCheck(sequenceOfRequest: Int): Unit = {
+    mutex.synchronized {
+      state match {
+        case ResponsePending(conn, handler) =>
+          if (requestSequence == sequenceOfRequest) {
+            logger.warn(s"$id had timeout on request")
+
+            scheduleConnectionRetry()
+
+            requestSequence = (requestSequence + 1) % 65536
+            state = NotConnected
+            conn.close()
+            notifyChannelOffline()
+          }
+        case _ =>
+      }
+    }
+  }
+
+  private def scheduleTimeoutCheck(sequenceOfRequest: Int, timeOffsetMs: Long): Unit = {
+    scheduler.scheduleCall(() => onTimeoutCheck(sequenceOfRequest), timeOffsetMs)
   }
 
   private def onPollTimer(): Unit = {
@@ -359,22 +385,27 @@ class ModbusMasterProcess(
 
         val poll = taskManager.next()
 
-        val handler = poll match {
+        val (handler, timeoutMs) = poll match {
           case rd: ReadDiscreteInput =>
             logger.debug(s"$id issuing poll ReadDiscreteInput")
-            new ReadResponseHandler(id, localReadBuffer, requestSequence, dispatcher, aduParser, rd.resultHandler(), deviceObs.onReadDiscreteInput, None)
+            (new ReadResponseHandler(id, localReadBuffer, requestSequence, dispatcher, aduParser, rd.resultHandler(), deviceObs.onReadDiscreteInput, None),
+              poll.timeoutMs)
           case rd: ReadCoilStatus =>
             logger.debug(s"$id issuing poll ReadCoilStatus")
-            new ReadResponseHandler(id, localReadBuffer, requestSequence, dispatcher, aduParser, rd.resultHandler(), deviceObs.onReadCoilStatus, None)
+            (new ReadResponseHandler(id, localReadBuffer, requestSequence, dispatcher, aduParser, rd.resultHandler(), deviceObs.onReadCoilStatus, None),
+              poll.timeoutMs)
           case rd: ReadInputRegister =>
             logger.debug(s"$id issuing poll ReadInputRegister")
-            new ReadResponseHandler(id, localReadBuffer, requestSequence, dispatcher, aduParser, rd.resultHandler(), deviceObs.onReadInputRegister, None)
+            (new ReadResponseHandler(id, localReadBuffer, requestSequence, dispatcher, aduParser, rd.resultHandler(), deviceObs.onReadInputRegister, None),
+              poll.timeoutMs)
           case rd: ReadHoldingRegister =>
             logger.debug(s"$id issuing poll ReadHoldingRegister")
-            new ReadResponseHandler(id, localReadBuffer, requestSequence, dispatcher, aduParser, rd.resultHandler(), deviceObs.onReadHoldingRegister, None)
+            (new ReadResponseHandler(id, localReadBuffer, requestSequence, dispatcher, aduParser, rd.resultHandler(), deviceObs.onReadHoldingRegister, None),
+              poll.timeoutMs)
         }
 
         doRequest(connection, poll.pdu())
+        scheduleTimeoutCheck(requestSequence, timeoutMs)
 
         Some(handler)
       }
