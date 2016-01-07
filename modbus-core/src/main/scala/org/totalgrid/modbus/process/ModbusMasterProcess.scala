@@ -151,6 +151,10 @@ class ModbusMasterProcess(
     commonWriteRequest(new WriteSingleRegisterRequest(UInt16(v), UInt16(index)))
   }
 
+  def maskWriteRegister(index: Int, andMask: Int, orMask: Int): Future[Boolean] = {
+    commonWriteRequest(new WriteMaskRegisterRequest(UInt16(andMask), UInt16(orMask), UInt16(index)))
+  }
+
   private def commonWriteRequest(wr: => WriteRequest): Future[Boolean] = {
     mutex.synchronized {
       state match {

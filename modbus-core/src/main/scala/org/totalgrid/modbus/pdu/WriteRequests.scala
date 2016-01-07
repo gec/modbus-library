@@ -61,6 +61,21 @@ class WriteSingleRegisterRequest(value: UInt16, address: UInt16) extends WriteRe
   }
 }
 
+class WriteMaskRegisterRequest(andMask: UInt16, orMask: UInt16, address: UInt16) extends WriteRequest with SerializableSequence {
+  val function: FunctionCode = FunctionCode.MASK_WRITE_REGISTER
+
+  protected def objects(): Seq[BufferSerializable] = {
+    Vector(function, address, andMask, orMask)
+  }
+
+  def parser(): WriteResponseParser = {
+    val ar = new Array[Byte](this.size() - 1)
+    val bb = ByteBuffer.wrap(ar)
+    SerializableSequence.write(bb, objects().drop(1))
+    new WriteResponseParser(function.code, function.error, ar)
+  }
+}
+
 class WriteResponseParser(val function: Byte, val error: Byte, requestBytes: Array[Byte]) extends PduParser[Boolean] with Logging {
 
   def responseSize(): Int = requestBytes.length

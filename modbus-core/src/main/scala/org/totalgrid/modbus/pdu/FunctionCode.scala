@@ -41,4 +41,5 @@ object FunctionCode {
   val READ_HOLDING_REGISTERS = new FunctionCode(0x03)
   val WRITE_SINGLE_REGISTER = new FunctionCode(0x06)
   val WRITE_MULTIPLE_REGISTERS = new FunctionCode(0x10)
+  val MASK_WRITE_REGISTER = new FunctionCode(0x16)
 }
