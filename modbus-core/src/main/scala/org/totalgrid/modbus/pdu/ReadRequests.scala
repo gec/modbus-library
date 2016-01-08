@@ -84,9 +84,8 @@ class RegisterResponseParser(val function: Byte, val error: Byte, start: Int, co
         logger.warn("Expected " + (expectedSize - 1) + " bytes, but packet specifies " + payloadSize)
         Discard
       } else {
-        var index = start
         val registers = Range(0, count).map { i =>
-          ModbusRegister(i, ByteX2(buffer.get(), buffer.get()))
+          ModbusRegister(start + i, ByteX2(buffer.get(), buffer.get()))
         }.toVector
         ValidResponse(registers)
       }
