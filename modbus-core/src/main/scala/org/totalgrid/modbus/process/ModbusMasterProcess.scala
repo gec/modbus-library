@@ -142,13 +142,11 @@ class ModbusMasterProcess(
     commonWriteRequest(new WriteSingleCoilRequest(value, UInt16(index)))
   }
   def writeSingleRegister(index: Int, value: Int): Future[Boolean] = {
-    val v: Int = if (value < 0) {
-      val asShort = value.toShort
-      (asShort & 0xFF) | (asShort & 0xFF00)
-    } else {
-      value
-    }
-    commonWriteRequest(new WriteSingleRegisterRequest(UInt16(v), UInt16(index)))
+    commonWriteRequest(new WriteSingleRegisterRequest(UInt16.signedConversion(value), UInt16(index)))
+  }
+
+  def writeMultipleRegisters(index: Int, values: Seq[Int]): Future[Boolean] = {
+    commonWriteRequest(new WriteMultiRegisterRequest(values.map(UInt16.signedConversion), UInt16(index)))
   }
 
   def maskWriteRegister(index: Int, andMask: Int, orMask: Int): Future[Boolean] = {

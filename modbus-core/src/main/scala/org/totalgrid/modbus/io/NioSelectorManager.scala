@@ -370,7 +370,7 @@ class NioSelectorManager(readBufferSize: Int) extends Logging {
 
   private def handleRequest: SelectorRequest => Unit = {
     case Registration(channel, channelCallbacks) => {
-      logger.debug("selector: registering channel")
+      logger.trace("selector: registering channel")
       val selectionKey = channel.register(selector, SelectionKey.OP_CONNECT, channelCallbacks)
       registry = registry.updated(channel, (selectionKey, channelCallbacks))
     }
@@ -380,7 +380,7 @@ class NioSelectorManager(readBufferSize: Int) extends Logging {
       channel.keyFor(selector).interestOps(interestSet | SelectionKey.OP_WRITE)
     }
     case Unregister(channel) => {
-      logger.debug("selector: unregistering")
+      logger.trace("selector: unregistering")
       registry.get(channel) match {
         case None =>
         case Some((selectionKey, callbacks)) => {

@@ -36,3 +36,7 @@ trait SerializableSequence extends BufferSerializable {
     SerializableSequence.write(buffer, objects())
   }
 }
+
+case class SeqOfSerializables(seq: Seq[BufferSerializable]) extends SerializableSequence {
+  protected def objects(): Seq[BufferSerializable] = seq
+}

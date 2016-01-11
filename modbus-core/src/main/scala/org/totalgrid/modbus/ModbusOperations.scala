@@ -23,6 +23,7 @@ import scala.concurrent.Future
 trait ModbusOperations {
   def writeSingleCoil(index: Int, value: Boolean): Future[Boolean]
   def writeSingleRegister(index: Int, value: Int): Future[Boolean]
+  def writeMultipleRegisters(index: Int, values: Seq[Int]): Future[Boolean]
   def maskWriteRegister(index: Int, andMask: Int, orMask: Int): Future[Boolean]
   def readDiscreteInputs(start: Int, count: Int): Future[Seq[ModbusBit]]
   def readCoilStatuses(start: Int, count: Int): Future[Seq[ModbusBit]]

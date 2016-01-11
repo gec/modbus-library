@@ -22,11 +22,12 @@ import java.nio.ByteBuffer
 import java.util
 
 import com.typesafe.scalalogging.slf4j.Logging
-import org.totalgrid.modbus.data.{ BufferSerializable, SerializableSequence, UInt16 }
+import org.totalgrid.modbus.ByteX2
+import org.totalgrid.modbus.data.{ SeqOfSerializables, BufferSerializable, SerializableSequence, UInt16 }
 import org.totalgrid.modbus.parse._
 
 trait WriteRequest extends RequestPdu {
-  def parser(): WriteResponseParser
+  def parser(): PduParser[Boolean]
 }
 
 class WriteSingleCoilRequest(value: Boolean, address: UInt16) extends WriteRequest with SerializableSequence {
@@ -73,6 +74,41 @@ class WriteMaskRegisterRequest(andMask: UInt16, orMask: UInt16, address: UInt16)
     val bb = ByteBuffer.wrap(ar)
     SerializableSequence.write(bb, objects().drop(1))
     new WriteResponseParser(function.code, function.error, ar)
+  }
+}
+
+class WriteMultiRegisterRequest(registers: Seq[UInt16], address: UInt16) extends WriteRequest with SerializableSequence {
+  val function: FunctionCode = FunctionCode.WRITE_MULTIPLE_REGISTERS
+
+  protected def objects(): Seq[BufferSerializable] = {
+    Vector(function, address, UInt16(registers.size), BufferSerializable.wrap((registers.size * 2).toByte), SeqOfSerializables(registers))
+  }
+
+  def parser(): WriteMultiRegisterParser = {
+    new WriteMultiRegisterParser(address.value, registers.size)
+  }
+}
+
+class WriteMultiRegisterParser(address: Int, registerCount: Int) extends PduParser[Boolean] with Logging {
+
+  val function: Byte = FunctionCode.WRITE_MULTIPLE_REGISTERS.code
+  val error: Byte = FunctionCode.WRITE_MULTIPLE_REGISTERS.error
+
+  def responseSize(): Int = 4
+
+  def handleData(buffer: ByteBuffer): ParseState[Boolean] = {
+    if (buffer.remaining() < responseSize()) {
+      Preserve
+    } else {
+      val responseAddress = ByteX2(buffer.get(), buffer.get()).uInt16
+      val responseRegisterCount = ByteX2(buffer.get(), buffer.get()).uInt16
+      if (address != responseAddress || registerCount != responseRegisterCount) {
+        logger.warn("Write response did not exactly match request")
+        Discard
+      } else {
+        ValidResponse(true)
+      }
+    }
   }
 }
 

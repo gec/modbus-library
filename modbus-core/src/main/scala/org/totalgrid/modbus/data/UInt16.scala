@@ -26,6 +26,16 @@ object UInt16 {
     buffer.put(((value >> 8) & 0xFF).toByte)
     buffer.put((value & 0xFF).toByte)
   }
+
+  def signedConversion(value: Int): UInt16 = {
+    val v: Int = if (value < 0) {
+      val asShort = value.toShort
+      (asShort & 0xFF) | (asShort & 0xFF00)
+    } else {
+      value
+    }
+    UInt16(v)
+  }
 }
 case class UInt16(value: Int) extends BufferSerializable {
   if (value < 0 || value > 65535) {

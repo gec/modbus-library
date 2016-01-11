@@ -428,6 +428,58 @@ class IntegrationTest extends FunSuite with ShouldMatchers with BeforeAndAfterEa
     negUpdate.last(0).value.uInt16 should equal(60001)
     negUpdate.last(1).i should equal(1)
     negUpdate.last(1).value.sInt16 should equal(-1234)
+  }
+
+  test("write multiple registers") {
+
+    val watcher = new Watcher
+    val openingFut = watcher.channelOpening.register(1)
+    val onlineFut = watcher.channelOnline.register(1)
+    val offlineFut = watcher.channelOffline.register(1)
+
+    val gotOriginal = watcher.holdingRegisters.register(_ => true)
+
+    val slave = r.buildSlave(34001, 33)
+
+    val poll = new ReadHoldingRegister(UInt16(0), UInt16(2), 100, 1000)
+
+    val master = r.buildMaster(Seq(poll), 34001, 33, watcher)
+
+    Await.result(openingFut, 5000.milliseconds)
+
+    Await.result(onlineFut, 5000.milliseconds)
+
+    val originals = Await.result(gotOriginal, 5000.milliseconds)
+
+    originals.size should equal(1)
+    val origPoll = originals.head
+
+    regsToSet(origPoll) should equal(Set((0, 0), (1, 0)))
+
+    val getUpdate1 = watcher.holdingRegisters.register { r => regsToSet(r) == Set((0, 11), (1, 0)) }
+    val writeFut1 = master.writeMultipleRegisters(0, Seq(11))
+    Await.result(writeFut1, 5000.milliseconds) should equal(true)
+    Await.result(getUpdate1, 5000.milliseconds)
+
+    val getUpdate2 = watcher.holdingRegisters.register { r => regsToSet(r) == Set((0, 33), (1, 22)) }
+    val writeFut2 = master.writeMultipleRegisters(0, Seq(33, 22))
+    Await.result(writeFut2, 5000.milliseconds) should equal(true)
+    Await.result(getUpdate2, 5000.milliseconds)
+
+    val getUpdate3 = watcher.holdingRegisters.register { r => regsToSet(r) == Set((0, 60001), (1, 22)) }
+    val writeFut3 = master.writeMultipleRegisters(0, Seq(60001))
+    Await.result(writeFut3, 5000.milliseconds) should equal(true)
+    Await.result(getUpdate3, 5000.milliseconds)
+
+    val getUpdate4 = watcher.holdingRegisters.register { r => regsToSet(r) != Set((0, 60001), (1, 22)) }
+    val writeFut4 = master.writeMultipleRegisters(1, Seq(-1234))
+    Await.result(writeFut4, 5000.milliseconds) should equal(true)
+    val negUpdate = Await.result(getUpdate4, 5000.milliseconds)
+
+    negUpdate.last(0).i should equal(0)
+    negUpdate.last(0).value.uInt16 should equal(60001)
+    negUpdate.last(1).i should equal(1)
+    negUpdate.last(1).value.sInt16 should equal(-1234)
 
   }
 
