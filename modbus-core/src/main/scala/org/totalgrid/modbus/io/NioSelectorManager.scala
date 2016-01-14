@@ -38,7 +38,7 @@ trait NioSelectorChannelCallbacks {
 }
 
 trait NioServiceRequests {
-  def register(socket: SocketChannel, channelCallbacks: NioSelectorChannelCallbacks)
+  def register(socket: SocketChannel, channelCallbacks: NioSelectorChannelCallbacks, alreadyConnected: Boolean = false)
   def registerForWrite(socket: SocketChannel)
   def unregister(socket: SocketChannel)
 }
@@ -245,52 +245,59 @@ class NioChannel(userCallbacks: ChannelUser, selectorRequests: NioServiceRequest
           val socketChannel = SocketChannel.open()
           socketChannel.configureBlocking(false)
 
-          socketChannel.connect(new InetSocketAddress(host, port))
+          val immediateConnection = socketChannel.connect(new InetSocketAddress(host, port))
 
-          selectorRequests.register(socketChannel, channelCallbacks)
+          selectorRequests.register(socketChannel, channelCallbacks, immediateConnection)
 
-          state = WaitingForConnect(socketChannel)
+          if (!immediateConnection) {
+            state = WaitingForConnect(socketChannel)
 
-          var exitLoop = false
-          val start = System.currentTimeMillis()
-          while (!exitLoop) {
-            val now = System.currentTimeMillis()
-            val timeLeft = (start + timeoutMs) - now
-            logger.debug("Connect wait time left: " + timeLeft)
-            if (timeLeft <= 0) {
-              exitLoop = true
-            } else {
-              try {
-                stateMutex.wait(timeLeft)
-                state match {
-                  case w: WaitingForConnect =>
-                  /*case cs: ConnectSignaled => exitLoop = true
-                  case ce: ConnectError => exitLoop = true*/
-                  case _ => exitLoop = true
+            var exitLoop = false
+            val start = System.currentTimeMillis()
+            while (!exitLoop) {
+              val now = System.currentTimeMillis()
+              val timeLeft = (start + timeoutMs) - now
+              logger.debug("Connect wait time left: " + timeLeft)
+              if (timeLeft <= 0) {
+                exitLoop = true
+              } else {
+                try {
+                  stateMutex.wait(timeLeft)
+                  state match {
+                    case w: WaitingForConnect =>
+                    /*case cs: ConnectSignaled => exitLoop = true
+                    case ce: ConnectError => exitLoop = true*/
+                    case _ => exitLoop = true
+                  }
+                } catch {
+                  case ex: InterruptedException =>
+                    exitLoop = true
                 }
-              } catch {
-                case ex: InterruptedException =>
-                  exitLoop = true
               }
             }
-          }
-          state match {
-            case ConnectSignaled(_) => {
-              logger.debug("Connected")
-              state = Idle(socketChannel)
+            state match {
+              case ConnectSignaled(_) => {
+                logger.debug("Connected")
+                state = Idle(socketChannel)
+              }
+              case ConnectError(_, ex) => {
+                logger.debug("Connection failed: " + ex)
+                state = FailedClosed
+                throw ex
+              }
+              case st: ClosedChannelState =>
+                selectorRequests.unregister(socketChannel)
+                throw new IOException("Connection closed before it was completed")
+              case _ =>
+                selectorRequests.unregister(socketChannel)
+                throw new TimeoutException("Couldn't connect within timeout")
             }
-            case ConnectError(_, ex) => {
-              logger.debug("Connection failed: " + ex)
-              state = FailedClosed
-              throw ex
-            }
-            case st: ClosedChannelState =>
-              selectorRequests.unregister(socketChannel)
-              throw new IOException("Connection closed before it was completed")
-            case _ =>
-              selectorRequests.unregister(socketChannel)
-              throw new TimeoutException("Couldn't connect within timeout")
+          } else {
+
+            logger.debug("Connected (immediate)")
+            state = Idle(socketChannel)
           }
+
         }
         case st =>
           throw new IllegalStateException("Channel already connected")
@@ -329,7 +336,7 @@ class NioChannel(userCallbacks: ChannelUser, selectorRequests: NioServiceRequest
 object NioSelectorManager {
 
   sealed trait SelectorRequest
-  case class Registration(channel: SocketChannel, channelCallbacks: NioSelectorChannelCallbacks) extends SelectorRequest
+  case class Registration(channel: SocketChannel, channelCallbacks: NioSelectorChannelCallbacks, alreadyConnected: Boolean = false) extends SelectorRequest
   case class RegisterForWrite(channel: SocketChannel) extends SelectorRequest
   case class Unregister(channel: SocketChannel) extends SelectorRequest
 }
@@ -353,8 +360,8 @@ class NioSelectorManager(readBufferSize: Int) extends Logging {
   }
 
   private val innerService = new NioServiceRequests {
-    override def register(socket: SocketChannel, channelCallbacks: NioSelectorChannelCallbacks): Unit = {
-      enqueueRequest(Registration(socket, channelCallbacks))
+    override def register(socket: SocketChannel, channelCallbacks: NioSelectorChannelCallbacks, alreadyConnected: Boolean): Unit = {
+      enqueueRequest(Registration(socket, channelCallbacks, alreadyConnected))
     }
 
     override def registerForWrite(socket: SocketChannel): Unit = {
@@ -369,9 +376,13 @@ class NioSelectorManager(readBufferSize: Int) extends Logging {
   def channelService(): NioServiceRequests = innerService
 
   private def handleRequest: SelectorRequest => Unit = {
-    case Registration(channel, channelCallbacks) => {
+    case Registration(channel, channelCallbacks, alreadyConnected) => {
       logger.trace("selector: registering channel")
-      val selectionKey = channel.register(selector, SelectionKey.OP_CONNECT, channelCallbacks)
+      val selectionKey = if (alreadyConnected) {
+        channel.register(selector, SelectionKey.OP_READ, channelCallbacks)
+      } else {
+        channel.register(selector, SelectionKey.OP_CONNECT, channelCallbacks)
+      }
       registry = registry.updated(channel, (selectionKey, channelCallbacks))
     }
     case RegisterForWrite(channel) => {
