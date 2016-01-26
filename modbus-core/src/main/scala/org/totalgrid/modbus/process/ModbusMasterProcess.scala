@@ -316,7 +316,7 @@ class ModbusMasterProcess(
   private def onConnectionClosed(): Unit = {
 
     def handleWhileConnected(conn: ClientConnection): Unit = {
-      logger.info(s"$id closed by user")
+      logger.info(s"$id closed remotely")
       state = NotConnected
       notifyChannelOffline()
       scheduleConnectionRetry()
