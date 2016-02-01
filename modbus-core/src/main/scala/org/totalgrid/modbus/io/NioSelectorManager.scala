@@ -100,7 +100,9 @@ class NioChannel(userCallbacks: ChannelUser, selectorRequests: NioServiceRequest
           }
           case _ =>
             logger.warn("Selector signaled connect when not waiting for signal")
-            key.interestOps(key.interestOps() & ~SelectionKey.OP_CONNECT)
+            if (key.isValid) {
+              key.interestOps(key.interestOps() & ~SelectionKey.OP_CONNECT)
+            }
             false
         }
       }
@@ -136,11 +138,15 @@ class NioChannel(userCallbacks: ChannelUser, selectorRequests: NioServiceRequest
             }
           }
           case st: ClosedChannelState =>
-            key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE)
+            if (key.isValid) {
+              key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE)
+            }
           case st =>
             // TODO: HANDLE
             logger.warn("Write ready fired in illegal state: " + st.getClass.getSimpleName)
-            key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE)
+            if (key.isValid) {
+              key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE)
+            }
         }
       }
     }
@@ -441,106 +447,123 @@ class NioSelectorManager(readBufferSize: Int) extends Logging {
     var inTime = 0L
     var emptyCount = 0
 
-    while (!localExit) {
+    try {
 
-      val currentRequests = requestMutex.synchronized {
-        val result = requests.toVector
-        requests.clear()
-        result
-      }
-      currentRequests.foreach(handleRequest)
+      while (!localExit) {
 
-      logger.trace("Select in")
-      val (selectedCount, selectError) = try {
-        inTime = System.currentTimeMillis()
-        val result = selector.select()
+        val currentRequests = requestMutex.synchronized {
+          val result = requests.toVector
+          requests.clear()
+          result
+        }
+        currentRequests.foreach(handleRequest)
 
-        // WORKAROUND FOR LINUX SELECT BUG
-        if (result == 0) {
-          val now = System.currentTimeMillis()
-          if (now - inTime < 3) {
-            emptyCount += 1
-            if (emptyCount > 10) {
-              reinitialize()
+        logger.trace("Select in")
+        val (selectedCount, selectError) = try {
+          inTime = System.currentTimeMillis()
+          val result = selector.select()
+
+          // WORKAROUND FOR LINUX SELECT BUG
+          if (result == 0) {
+            val now = System.currentTimeMillis()
+            if (now - inTime < 3) {
+              emptyCount += 1
+              if (emptyCount > 10) {
+                reinitialize()
+              }
+            } else {
+              emptyCount = 0
             }
           } else {
             emptyCount = 0
           }
-        } else {
-          emptyCount = 0
+
+          (result, false)
+        } catch {
+          case ex: IOException =>
+            logger.warn("Exception in select(): " + ex)
+            (0, true)
+          case ex: ClosedSelectorException =>
+            logger.debug("Closed selector exception")
+            (0, true)
         }
+        logger.trace("Select out")
 
-        (result, false)
-      } catch {
-        case ex: IOException =>
-          logger.warn("Exception in select(): " + ex)
-          (0, true)
-        case ex: ClosedSelectorException =>
-          logger.debug("Closed selector exception")
-          (0, true)
-      }
-      logger.trace("Select out")
+        if (!selectError) {
+          registry.synchronized {
+            if (!exitSignal.get()) {
+              val selectedKeys = selector.selectedKeys().iterator()
+              while (selectedKeys.hasNext) {
+                val key = selectedKeys.next()
+                selectedKeys.remove()
 
-      if (!selectError) {
-        registry.synchronized {
-          if (!exitSignal.get()) {
-            val selectedKeys = selector.selectedKeys().iterator()
-            while (selectedKeys.hasNext) {
-              val key = selectedKeys.next()
-              selectedKeys.remove()
+                if (key.isValid) {
 
-              if (key.isValid) {
+                  def callbackFor(k: SelectionKey): Option[NioSelectorChannelCallbacks] = Option(key.attachment()).map(_.asInstanceOf[NioSelectorChannelCallbacks])
 
-                def callbackFor(k: SelectionKey): Option[NioSelectorChannelCallbacks] = Option(key.attachment()).map(_.asInstanceOf[NioSelectorChannelCallbacks])
+                  if (key.isAcceptable) {
+                    // not implemented
+                  } else if (key.isConnectable) {
 
-                if (key.isAcceptable) {
-                  // not implemented
-                } else if (key.isConnectable) {
-
-                  logger.trace("selector: isConnectable")
-                  callbackFor(key).foreach { callback =>
-                    val isAccepted = callback.onConnect(key)
-                    if (!isAccepted) {
-                      key.cancel()
-                      key.channel() match {
-                        case sock: SocketChannel =>
-                          registry -= sock
-                        case _ =>
+                    logger.trace("selector: isConnectable")
+                    callbackFor(key).foreach { callback =>
+                      val isAccepted = try {
+                        callback.onConnect(key)
+                      } catch {
+                        case ex: Throwable =>
+                          logger.warn("selector: channel had error on onConnect: " + ex)
+                          false
+                      }
+                      if (!isAccepted) {
+                        key.cancel()
+                        key.channel() match {
+                          case sock: SocketChannel =>
+                            registry -= sock
+                          case _ =>
+                        }
                       }
                     }
-                  }
 
-                } else if (key.isReadable) {
+                  } else if (key.isReadable) {
 
-                  logger.trace("selector: isReadable")
-                  key.channel() match {
-                    case ch: SocketChannel => {
-                      callbackFor(key) match {
-                        case None => key.cancel() // prevent this from constantly waking us up
-                        case Some(callback) => handleRead(ch, key, callback)
+                    logger.trace("selector: isReadable")
+                    key.channel() match {
+                      case ch: SocketChannel => {
+                        callbackFor(key) match {
+                          case None => key.cancel() // prevent this from constantly waking us up
+                          case Some(callback) => handleRead(ch, key, callback)
+                        }
+                      }
+                      case _ => key.cancel()
+                    }
+
+                  } else if (key.isWritable) {
+
+                    logger.trace("selector: isWritable")
+                    callbackFor(key) match {
+                      case None => key.cancel()
+                      case Some(callback) => try {
+                        callback.onWriteReady(key)
+                      } catch {
+                        case ex: Throwable => logger.warn("selector: channel had error on onWriteReady: " + ex)
                       }
                     }
-                    case _ => key.cancel()
-                  }
-
-                } else if (key.isWritable) {
-
-                  logger.trace("selector: isWritable")
-                  callbackFor(key) match {
-                    case None => key.cancel()
-                    case Some(callback) => callback.onWriteReady(key)
                   }
                 }
               }
-            }
 
-          } else {
-            localExit = true
+            } else {
+              localExit = true
+            }
           }
+        } else {
+          localExit = true
         }
-      } else {
-        localExit = true
       }
+
+    } catch {
+      case ex: Throwable =>
+        logger.error("Modbus IO had uncaught exception in main loop: " + ex)
     }
     logger.info("Modbus IO exiting")
   }
