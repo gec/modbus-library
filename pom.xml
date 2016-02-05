@@ -6,11 +6,11 @@
     <groupId>org.totalgrid.modbus</groupId>
     <artifactId>modbus</artifactId>
     <packaging>pom</packaging>
-    <version>0.2.0</version>
+    <version>0.2.1-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <modbus.version>0.2.0</modbus.version>
+        <modbus.version>0.2.1-SNAPSHOT</modbus.version>
         <scala.version>2.10.1</scala.version>
         <scala.annotation>2.10</scala.annotation>
         <scala-maven-plugin.version>3.1.0</scala-maven-plugin.version>
