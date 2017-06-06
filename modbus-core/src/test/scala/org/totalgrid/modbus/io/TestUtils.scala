@@ -22,11 +22,11 @@ import java.io.{ InputStream, OutputStream }
 import java.net.{ InetSocketAddress, InetAddress, Socket, ServerSocket }
 import java.nio.ByteBuffer
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent._
 
-class SyncServer(port: Int) extends Logging {
+class SyncServer(port: Int) extends LazyLogging {
   private val serverSocket = new ServerSocket(port, 1)
 
   private var clientSocketOpt = Option.empty[Socket]
@@ -71,7 +71,7 @@ class SyncServer(port: Int) extends Logging {
   }
 }
 
-class EchoServer(port: Int) extends Logging {
+class EchoServer(port: Int) extends LazyLogging {
   private val serverSocket = new ServerSocket(port)
   private var clientSocketOpt = Option.empty[Socket]
   private var outputOpt = Option.empty[OutputStream]

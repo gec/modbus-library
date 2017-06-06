@@ -19,15 +19,14 @@
 package org.totalgrid.modbus.pdu
 
 import org.junit.runner.RunWith
-import org.scalatest.FunSuite
+import org.scalatest.{ FunSuite, Matchers }
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.matchers.ShouldMatchers
 import org.totalgrid.modbus.data.Hex
 import org.totalgrid.modbus.parse.ValidResponse
 import org.totalgrid.modbus.{ ByteX2, ModbusBit, ModbusRegister }
 
 @RunWith(classOf[JUnitRunner])
-class ReadResponseTest extends FunSuite with ShouldMatchers {
+class ReadResponseTest extends FunSuite with Matchers {
 
   test("Bit response offset") {
 

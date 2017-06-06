@@ -18,11 +18,10 @@
  */
 package org.totalgrid.modbus.integration
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.LazyLogging
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.matchers.ShouldMatchers
-import org.scalatest.{ BeforeAndAfterEach, FunSuite }
+import org.scalatest.{ BeforeAndAfterEach, FunSuite, Matchers }
 import org.totalgrid.modbus._
 import org.totalgrid.modbus.data.UInt16
 import org.totalgrid.modbus.poll.{ Poll, ReadCoilStatus, ReadHoldingRegister, ReadInputRegister }
@@ -31,7 +30,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future, Promise, promise }
 
 @RunWith(classOf[JUnitRunner])
-class IntegrationTest extends FunSuite with ShouldMatchers with BeforeAndAfterEach with Logging {
+class IntegrationTest extends FunSuite with Matchers with BeforeAndAfterEach with LazyLogging {
 
   var r: TestRig = null
 

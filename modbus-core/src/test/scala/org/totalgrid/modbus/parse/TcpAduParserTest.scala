@@ -19,15 +19,14 @@
 package org.totalgrid.modbus.parse
 
 import org.junit.runner.RunWith
-import org.scalatest.FunSuite
+import org.scalatest.{ FunSuite, Matchers }
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.matchers.ShouldMatchers
 import org.totalgrid.modbus.ModbusBit
 import org.totalgrid.modbus.data.Hex
 import org.totalgrid.modbus.pdu.{ BitResponseParser, FunctionCode }
 
 @RunWith(classOf[JUnitRunner])
-class TcpAduParserTest extends FunSuite with ShouldMatchers {
+class TcpAduParserTest extends FunSuite with Matchers {
 
   test("Valid response") {
     val adu = new TcpAduParser(0x03)

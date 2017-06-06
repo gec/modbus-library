@@ -20,7 +20,7 @@ package org.totalgrid.modbus.pdu
 
 import java.nio.ByteBuffer
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.LazyLogging
 import org.totalgrid.modbus.{ ByteX2, ModbusRegister, ModbusBit }
 import org.totalgrid.modbus.data.UInt16
 import org.totalgrid.modbus.parse._
@@ -43,7 +43,7 @@ abstract class ReadBitsRequest(start: UInt16, count: UInt16, code: FunctionCode)
 abstract class ReadUInt16Request(start: UInt16, count: UInt16, code: FunctionCode)
   extends StartCountReadRequest(start, count, code)
 
-class BitResponseParser(val function: Byte, val error: Byte, start: Int, count: Int) extends PduParser[Seq[ModbusBit]] with Logging {
+class BitResponseParser(val function: Byte, val error: Byte, start: Int, count: Int) extends PduParser[Seq[ModbusBit]] with LazyLogging {
 
   def handleData(buffer: ByteBuffer): ParseState[Seq[ModbusBit]] = {
     val expectedSize = responseSize()
@@ -72,7 +72,7 @@ class BitResponseParser(val function: Byte, val error: Byte, start: Int, count: 
 
 }
 
-class RegisterResponseParser(val function: Byte, val error: Byte, start: Int, count: Int) extends PduParser[Seq[ModbusRegister]] with Logging {
+class RegisterResponseParser(val function: Byte, val error: Byte, start: Int, count: Int) extends PduParser[Seq[ModbusRegister]] with LazyLogging {
 
   def handleData(buffer: ByteBuffer): ParseState[Seq[ModbusRegister]] = {
     val expectedSize = responseSize()

@@ -20,12 +20,12 @@ package org.totalgrid.modbus.parse
 
 import java.nio.ByteBuffer
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.LazyLogging
 import org.totalgrid.modbus.ByteX2
-import org.totalgrid.modbus.data.{ BufferSerializable, UInt16, SerializableSequence }
+import org.totalgrid.modbus.data.{ BufferSerializable, SerializableSequence, UInt16 }
 import org.totalgrid.modbus.pdu.RequestPdu
 
-class TcpAduParser(unitIdentifier: Byte) extends AduParser with Logging {
+class TcpAduParser(unitIdentifier: Byte) extends AduParser with LazyLogging {
 
   def aduSize(): Int = 7 // "MBAP" header
 

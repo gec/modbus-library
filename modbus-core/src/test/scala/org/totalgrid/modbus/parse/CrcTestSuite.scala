@@ -19,13 +19,12 @@ package org.totalgrid.modbus.parse
  * the License.
  */
 import org.junit.runner.RunWith
-import org.scalatest.FunSuite
+import org.scalatest.{ FunSuite, Matchers }
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.matchers.ShouldMatchers
 import org.totalgrid.modbus.data.Hex
 
 @RunWith(classOf[JUnitRunner])
-class CrcTestSuite extends FunSuite with ShouldMatchers {
+class CrcTestSuite extends FunSuite with Matchers {
 
   import Hex._
 

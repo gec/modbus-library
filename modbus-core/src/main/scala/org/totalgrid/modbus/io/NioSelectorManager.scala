@@ -25,7 +25,7 @@ import java.nio.channels.{ ClosedSelectorException, Selector, SelectionKey, Sock
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.LazyLogging
 
 import scala.collection.mutable
 
@@ -64,7 +64,7 @@ object NioChannel {
 
 }
 
-class NioChannel(userCallbacks: ChannelUser, selectorRequests: NioServiceRequests) extends ClientConnection with Logging {
+class NioChannel(userCallbacks: ChannelUser, selectorRequests: NioServiceRequests) extends ClientConnection with LazyLogging {
   import NioChannel._
 
   private val stateMutex = new Object
@@ -346,7 +346,7 @@ object NioSelectorManager {
   case class RegisterForWrite(channel: SocketChannel) extends SelectorRequest
   case class Unregister(channel: SocketChannel) extends SelectorRequest
 }
-class NioSelectorManager(readBufferSize: Int) extends Logging {
+class NioSelectorManager(readBufferSize: Int) extends LazyLogging {
   import NioSelectorManager._
 
   private val exitSignal = new AtomicBoolean(false)

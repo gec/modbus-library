@@ -21,7 +21,7 @@ package org.totalgrid.modbus.pdu
 import java.nio.ByteBuffer
 import java.util
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.LazyLogging
 import org.totalgrid.modbus.ByteX2
 import org.totalgrid.modbus.data.{ SeqOfSerializables, BufferSerializable, SerializableSequence, UInt16 }
 import org.totalgrid.modbus.parse._
@@ -89,7 +89,7 @@ class WriteMultiRegisterRequest(registers: Seq[UInt16], address: UInt16) extends
   }
 }
 
-class WriteMultiRegisterParser(address: Int, registerCount: Int) extends PduParser[Boolean] with Logging {
+class WriteMultiRegisterParser(address: Int, registerCount: Int) extends PduParser[Boolean] with LazyLogging {
 
   val function: Byte = FunctionCode.WRITE_MULTIPLE_REGISTERS.code
   val error: Byte = FunctionCode.WRITE_MULTIPLE_REGISTERS.error
@@ -112,7 +112,7 @@ class WriteMultiRegisterParser(address: Int, registerCount: Int) extends PduPars
   }
 }
 
-class WriteResponseParser(val function: Byte, val error: Byte, requestBytes: Array[Byte]) extends PduParser[Boolean] with Logging {
+class WriteResponseParser(val function: Byte, val error: Byte, requestBytes: Array[Byte]) extends PduParser[Boolean] with LazyLogging {
 
   def responseSize(): Int = requestBytes.length
 

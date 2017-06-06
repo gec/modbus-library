@@ -18,12 +18,12 @@
  */
 package org.totalgrid.modbus.process
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.LazyLogging
 import org.totalgrid.modbus.poll.Poll
 
 import scala.collection.immutable.Queue
 
-class TaskManager(polls: Seq[Poll]) extends Logging {
+class TaskManager(polls: Seq[Poll]) extends LazyLogging {
   private var taskQueue: Queue[(Option[Long], Poll)] = {
     polls.map(p => (None, p)).to[Queue]
   }

@@ -6,17 +6,17 @@
     <groupId>org.totalgrid.modbus</groupId>
     <artifactId>modbus</artifactId>
     <packaging>pom</packaging>
-    <version>0.2.1-SNAPSHOT</version>
+    <version>0.3.0-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <modbus.version>0.2.1-SNAPSHOT</modbus.version>
-        <scala.version>2.10.1</scala.version>
-        <scala.annotation>2.10</scala.annotation>
+        <modbus.version>0.3.0-SNAPSHOT</modbus.version>
+        <scala.version>2.12.1</scala.version>
+        <scala.annotation>2.12</scala.annotation>
         <scala-maven-plugin.version>3.1.0</scala-maven-plugin.version>
         <slf4j-api.version>1.7.2</slf4j-api.version>
-        <scalalogging.version>1.0.1</scalalogging.version>
-        <scalatest.version>1.9.1</scalatest.version>
+        <scalalogging.version>3.5.0</scalalogging.version>
+        <scalatest.version>3.0.1</scalatest.version>
         <scalariform-maven-plugin.version>0.1.4</scalariform-maven-plugin.version>
     </properties>
 
@@ -211,21 +211,21 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.typesafe</groupId>
-            <artifactId>scalalogging-slf4j_${scala.annotation}</artifactId>
+            <groupId>com.typesafe.scala-logging</groupId>
+            <artifactId>scala-logging_${scala.annotation}</artifactId>
             <version>${scalalogging.version}</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.scalatest</groupId>
+            <artifactId>scalatest_${scala.annotation}</artifactId>
+            <version>${scalatest.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.8.2</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.scalatest</groupId>
-            <artifactId>scalatest_2.10</artifactId>
-            <version>1.9.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -21,7 +21,7 @@ package org.totalgrid.modbus.process
 import java.io.IOException
 import java.nio.ByteBuffer
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.LazyLogging
 import org.totalgrid.modbus.data.UInt16
 import org.totalgrid.modbus.io.{ ChannelUser, ClientConnection, ConnectionSource }
 import org.totalgrid.modbus.parse._
@@ -59,7 +59,7 @@ class ModbusMasterProcess(
     deviceObs: ModbusDeviceObserver,
     channelObs: ChannelObserver,
     polls: Seq[Poll],
-    aduParser: AduParser) extends ModbusMaster with Logging {
+    aduParser: AduParser) extends ModbusMaster with LazyLogging {
   import ModbusMasterProcess._
 
   private val mutex = new Object

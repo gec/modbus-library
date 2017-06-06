@@ -19,17 +19,16 @@
 package org.totalgrid.modbus.io
 
 import java.io.IOException
-import java.net.{ ConnectException, Socket, ServerSocket }
+import java.net.{ ConnectException, ServerSocket, Socket }
 import java.nio.ByteBuffer
 import java.util
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.{ TimeoutException, Executors }
+import java.util.concurrent.{ Executors, TimeoutException }
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.LazyLogging
 import org.junit.runner.RunWith
-import org.scalatest.FunSuite
+import org.scalatest.{ FunSuite, Matchers }
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.matchers.ShouldMatchers
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -38,7 +37,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random
 
 @RunWith(classOf[JUnitRunner])
-class NioTests extends FunSuite with ShouldMatchers with Logging {
+class NioTests extends FunSuite with Matchers with LazyLogging {
 
   logger.info("Running tests...")
 

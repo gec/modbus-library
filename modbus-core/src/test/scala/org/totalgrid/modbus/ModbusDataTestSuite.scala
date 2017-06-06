@@ -18,13 +18,12 @@ package org.totalgrid.modbus
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.{ FunSuite, Matchers }
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 
 @RunWith(classOf[JUnitRunner])
-class ModbusDataTestSuite extends FunSuite with ShouldMatchers {
+class ModbusDataTestSuite extends FunSuite with Matchers {
 
   test("Signed byte conversion") {
     ByteX2(-1, -1).sInt16 should equal(-1)

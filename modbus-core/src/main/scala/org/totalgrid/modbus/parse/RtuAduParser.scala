@@ -20,11 +20,11 @@ package org.totalgrid.modbus.parse
 
 import java.nio.ByteBuffer
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.LazyLogging
 import org.totalgrid.modbus.data.UInt16
 import org.totalgrid.modbus.pdu.RequestPdu
 
-class RtuAduParser(address: Byte) extends AduParser with Logging {
+class RtuAduParser(address: Byte) extends AduParser with LazyLogging {
 
   def aduSize(): Int = 3 // 1 address, 2 CRC
 

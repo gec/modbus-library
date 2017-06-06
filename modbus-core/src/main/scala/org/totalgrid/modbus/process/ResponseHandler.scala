@@ -20,7 +20,7 @@ package org.totalgrid.modbus.process
 
 import java.nio.ByteBuffer
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.LazyLogging
 import org.totalgrid.modbus.{ ModbusProtocolError, ModbusExceptionResponse }
 import org.totalgrid.modbus.parse._
 
@@ -37,7 +37,7 @@ class ReadResponseHandler[Result](stackId: String,
     aduParser: AduParser,
     parser: PduParser[Result],
     resultHandler: Result => Unit,
-    promOpt: Option[Promise[Result]]) extends ResponseHandler with Logging {
+    promOpt: Option[Promise[Result]]) extends ResponseHandler with LazyLogging {
   localReadBuffer.clear()
 
   def handleData(buffer: ByteBuffer): Boolean = {
@@ -67,7 +67,7 @@ class ReadResponseHandler[Result](stackId: String,
   }
 }
 
-class WriteResponseHandler(stackId: String, localReadBuffer: ByteBuffer, sequence: Int, aduParser: AduParser, parser: PduParser[Boolean], promise: Promise[Boolean]) extends ResponseHandler with Logging {
+class WriteResponseHandler(stackId: String, localReadBuffer: ByteBuffer, sequence: Int, aduParser: AduParser, parser: PduParser[Boolean], promise: Promise[Boolean]) extends ResponseHandler with LazyLogging {
   localReadBuffer.clear()
 
   def handleData(buffer: ByteBuffer): Boolean = {
